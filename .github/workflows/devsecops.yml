@@ -23,8 +23,6 @@ jobs:
         run: safety check -r requirements.txt --full-report
         # Cette ligne permet au pipeline de continuer même si Safety trouve des vulnérabilités (exit code non-nul)
         continue-on-error: true 
-
-  ---
   
   ContainerScan:
     runs-on: ubuntu-latest
@@ -46,8 +44,6 @@ jobs:
         run: trivy image --severity CRITICAL,HIGH,MEDIUM monapp:latest
         # Cette ligne permet au pipeline de continuer même si Trivy trouve des vulnérabilités critiques ou élevées
         continue-on-error: true 
-
-  ---
   
   Deploy:
     runs-on: ubuntu-latest
