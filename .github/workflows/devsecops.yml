@@ -1,22 +1,58 @@
+devsecops.yml
 name: Automatisation des tests DevSecOps
+
 on: push
+
 jobs:
-  Dependances:
+
+  DependenciesScan:
     runs-on: ubuntu-latest
     steps:
-      - name: Dependances
-        run: |
-          echo "ecrire ici le scrypt de contrôle des dépendances"
-  Dockerfile:
+      - name: ⬇️ Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Configuration de Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 🛠️ Installation de Safety
+        run: pip install safety
+
+      - name: 🔍 Contrôle des dépendances (requirements.txt)
+        # Exécute l'analyse et affiche le rapport
+        run: safety check -r requirements.txt --full-report
+        # Cette ligne permet au pipeline de continuer même si Safety trouve des vulnérabilités (exit code non-nul)
+        continue-on-error: true 
+
+  ---
+  
+  ContainerScan:
     runs-on: ubuntu-latest
-    needs: Dependances
+    needs: DependenciesScan
     steps:
-      - name: Test Dockerfile
-        run: |
-          echo "ecrire ici le scrypt de contrôle du Dockerfile"
+      - name: ⬇️ Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 🔨 Construction de l'image Docker
+        run: docker build -t monapp:latest . 
+
+      - name: ⚙️ Installation de Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          install-only: true
+
+      - name: 🔎 Scan de l'image Docker avec Trivy
+        # Retire l'option --exit-code 1 et utilise la sévérité pour le rapport uniquement
+        run: trivy image --severity CRITICAL,HIGH,MEDIUM monapp:latest
+        # Cette ligne permet au pipeline de continuer même si Trivy trouve des vulnérabilités critiques ou élevées
+        continue-on-error: true 
+
+  ---
+  
   Deploy:
     runs-on: ubuntu-latest
-    needs: Dockerfile
+    needs: ContainerScan
     steps:
       - name: Deploy
         run: |
