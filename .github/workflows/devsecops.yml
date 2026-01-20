@@ -10,21 +10,22 @@ jobs:
 
       - name: Scan requirements.txt avec Trivy
         run: |
-          # Utilisation de 'fs' (filesystem) sur le dossier courant '.'
-          # On retire --file-patterns pour laisser Trivy auto-détecter le fichier pip
+          echo "Scan des dépendances avec Trivy..."
           docker run --rm -v "$PWD":/app -w /app aquasec/trivy:latest fs \
           --scanners vuln \
           --pkg-types library \
+          --file-patterns 'pip:requirements\.txt' \
           --severity HIGH,CRITICAL \
+          --exit-code 0 \
           --format table \
-          --output report-deps.txt \
-          .
+          --output rapport-dependances.txt \
+          /app
 
-      - name: Sauvegarder le rapport des dépendances
+      - name: Upload Rapport Dépendances
         uses: actions/upload-artifact@v4
         with:
-          name: rapport-vulnerabilites-deps
-          path: report-deps.txt
+          name: rapport-trivy-dependances
+          path: rapport-dependances.txt
 
   Dockerfile:
     runs-on: ubuntu-latest
@@ -35,21 +36,24 @@ jobs:
 
       - name: Analyse du Dockerfile avec Trivy
         run: |
+          echo "Analyse du Dockerfile (config scan)..."
           docker run --rm -v "$PWD":/app -w /app aquasec/trivy:latest config \
-          --severity HIGH,CRITICAL \
-          --format table \
-          --output report-docker.txt \
-          /app
+           --severity HIGH,CRITICAL \
+           --exit-code 0 \
+           --format table \
+           --output rapport-dockerfile.txt \
+           /app
 
-      - name: Sauvegarder le rapport Dockerfile
+      - name: Upload Rapport Dockerfile
         uses: actions/upload-artifact@v4
         with:
-          name: rapport-securite-docker
-          path: report-docker.txt
+          name: rapport-trivy-dockerfile
+          path: rapport-dockerfile.txt
 
   Deploy:
     runs-on: ubuntu-latest
     needs: Dockerfile
     steps:
       - name: Deploy
-        run: echo "Rien à faire ici. Votre application est prête à être déployée"
+        run: |
+          echo "Rien à faire ici. Votre application est prête à être déployée"
