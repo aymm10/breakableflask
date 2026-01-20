@@ -10,13 +10,15 @@ jobs:
 
       - name: Scan requirements.txt avec Trivy
         run: |
+          # Utilisation de 'fs' (filesystem) sur le dossier courant '.'
+          # On retire --file-patterns pour laisser Trivy auto-détecter le fichier pip
           docker run --rm -v "$PWD":/app -w /app aquasec/trivy:latest fs \
           --scanners vuln \
           --pkg-types library \
           --severity HIGH,CRITICAL \
           --format table \
           --output report-deps.txt \
-          /app
+          .
 
       - name: Sauvegarder le rapport des dépendances
         uses: actions/upload-artifact@v4
